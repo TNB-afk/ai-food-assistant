@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Food Decision Assistant</title>
+<style>
+:root{
+  --bg:#f7f7f5;--bg2:#ffffff;--bg3:#f0ede8;--bg4:#e8e4de;
+  --border:#e0dbd3;--text:#1a1a1a;--muted:#888;--muted2:#aaa;
+  --accent:#e67e22;--accent2:#f39c12;--accent-light:#fff8f0;
+  --green:#27ae60;--red:#e74c3c;--yellow:#f39c12;--blue:#2980b9;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);
+  --shadow2:0 2px 8px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Sarabun','Segoe UI',sans-serif;font-size:15px;line-height:1.6;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+
+/* HEADER */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:28px 24px 0;box-shadow:var(--shadow);}
+.hdr-inner{max-width:1200px;margin:0 auto;}
+.hdr-title{font-size:26px;font-weight:800;letter-spacing:-.5px;color:var(--text);}
+.hdr-title span{color:var(--accent);}
+.hdr-meta{font-size:13px;color:var(--muted);margin-top:6px;margin-bottom:14px;}
+.badge{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:12px;color:var(--muted);margin-right:6px;}
+
+/* AREA TABS */
+.area-bar{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;gap:8px;flex-wrap:wrap;}
+.area-btn{background:var(--bg2);border:2px solid var(--border);color:var(--muted);padding:7px 18px;border-radius:30px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:all .15s;}
+.area-btn:hover{border-color:var(--accent);color:var(--accent);}
+.area-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+
+/* SECTIONS */
+.sec{max-width:1200px;margin:0 auto;padding:32px 24px;}
+.sec-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.sec-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.divider{border:none;border-top:1px solid var(--border);margin:0;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 16px;box-shadow:var(--shadow);}
+.stat-n{font-size:28px;font-weight:800;color:var(--accent);line-height:1;}
+.stat-l{font-size:12px;color:var(--muted);margin-top:4px;font-weight:500;}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:12px;box-shadow:var(--shadow);}
+.tbl{width:100%;border-collapse:collapse;background:var(--bg2);}
+.tbl th{background:var(--bg3);color:var(--muted);font-size:12px;font-weight:700;text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover td{background:var(--accent-light);}
+
+/* RANK */
+.rnum{font-size:17px;font-weight:800;width:28px;text-align:center;color:var(--muted2);}
+.rnum.g{color:var(--accent2);}
+.rnum.s{color:#95a5a6;}
+.rnum.b{color:#cd7f32;}
+.tscore{font-size:20px;font-weight:800;color:var(--accent);}
+
+/* TAGS */
+.atag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-weight:600;border:1px solid rgba(230,126,34,.2);}
+.risk{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.r-l{background:#eafaf1;color:#27ae60;border:1px solid #a9dfbf;}
+.r-m{background:#fef9e7;color:#e67e22;border:1px solid #fad7a0;}
+.r-h{background:#fdedec;color:#e74c3c;border:1px solid #f5b7b1;}
+
+/* TOP 3 CARDS */
+.t3{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px;}
+.t3c{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow2);position:relative;overflow:hidden;transition:box-shadow .2s;}
+.t3c:hover{box-shadow:0 4px 20px rgba(0,0,0,.1);}
+.t3c.r1{border-color:var(--accent);}
+.t3c.r1::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.t3-rank{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.t3-rank.g{color:var(--accent);}
+.t3-name{font-size:19px;font-weight:800;line-height:1.2;margin-bottom:4px;}
+.t3-area{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.t3-sc{font-size:40px;font-weight:800;color:var(--accent);line-height:1;}
+.t3-scl{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.t3-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.t3-stat{background:var(--bg3);border-radius:10px;padding:10px 12px;}
+.t3-sv{font-size:17px;font-weight:700;}
+.t3-sk{font-size:11px;color:var(--muted);margin-top:2px;}
+.score-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
+.spill{font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--muted);}
+.spill span{color:var(--text);font-weight:700;}
+.pros-cons{margin-bottom:14px;}
+.pro{font-size:12px;color:var(--green);padding:2px 0;display:flex;gap:5px;align-items:flex-start;}
+.pro::before{content:'✓';font-weight:700;}
+.con{font-size:12px;color:var(--red);padding:2px 0;display:flex;gap:5px;align-items:flex-start;}
+.con::before{content:'!';font-weight:700;}
+.t3-links{display:flex;gap:8px;flex-wrap:wrap;}
+.t3-link{font-size:12px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);color:var(--muted);font-weight:500;transition:all .15s;background:var(--bg2);}
+.t3-link:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+
+/* FILTER PILLS (dataset) */
+.filter-group{margin-bottom:20px;}
+.filter-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px;}
+.pill{background:var(--bg2);border:1.5px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:30px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:all .15s;}
+.pill:hover{border-color:var(--accent);color:var(--accent);}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+
+/* COMPARE */
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+.cmpc{background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);}
+.cmpc-n{font-weight:800;font-size:16px;margin-bottom:4px;}
+.cmpc-a{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.cmpr{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border);}
+.cmpr:last-child{border:none;}
+.cmpr-label{color:var(--muted);}
+
+/* AI ASK BOX */
+.ask-box{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow2);}
+.ask-quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.ask-qbtn{background:var(--bg3);border:1.5px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:30px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;transition:all .15s;}
+.ask-qbtn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+.ask-input-row{display:flex;gap:10px;}
+.ask-input{flex:1;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);padding:12px 16px;border-radius:12px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;}
+.ask-input:focus{border-color:var(--accent);background:var(--bg2);}
+.ask-btn{background:var(--accent);border:none;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;}
+.ask-btn:hover{background:var(--accent2);}
+.ask-btn:disabled{opacity:.5;cursor:not-allowed;}
+.ask-answer{display:none;margin-top:16px;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:20px;}
+.ask-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:12px;}
+.ask-loading{color:var(--accent);display:none;}
+.ask-text{font-size:14px;line-height:1.8;white-space:pre-wrap;color:var(--text);}
+.ask-cards{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+.ask-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;box-shadow:var(--shadow);}
+.ask-hist{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+.ask-hist-item{border-top:1px solid var(--border);padding-top:10px;}
+.ask-hist-q{font-size:13px;color:var(--accent);font-weight:600;margin-bottom:4px;}
+.ask-hist-a{font-size:13px;color:var(--muted);white-space:pre-wrap;}
+
+/* HUMAN REVIEW */
+.rv-list{display:flex;flex-direction:column;gap:12px;}
+.rv-card{background:var(--bg2);border:1.5px solid var(--border);border-left:4px solid var(--red);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow);}
+.rv-card.warn{border-left-color:var(--yellow);}
+.rv-name{font-weight:700;font-size:15px;}
+.rv-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.rv-flags{display:flex;flex-direction:column;gap:6px;margin-top:12px;}
+.flag{font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid;}
+.flag-r{background:#fdedec;color:#e74c3c;border-color:#f5b7b1;}
+.flag-y{background:#fef9e7;color:#e67e22;border-color:#fad7a0;}
+.rv-note{font-size:11px;color:var(--muted2);margin-top:10px;font-style:italic;}
+
+/* WORKFLOW */
+.wf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.wf-s{background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;box-shadow:var(--shadow);}
+.wf-a{color:var(--muted2);font-size:18px;padding:0 2px;}
+
+/* TOOLS */
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;}
+.tool{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);}
+.tool-n{font-weight:700;font-size:14px;}
+.tool-r{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* SOURCES */
+.src-list{display:flex;flex-direction:column;gap:10px;}
+.src{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;box-shadow:var(--shadow);}
+.src-n{font-weight:700;font-size:14px;}
+.src-d{font-size:12px;color:var(--muted);}
+
+/* SCORING */
+.sbar{height:6px;background:var(--bg3);border-radius:3px;min-width:60px;}
+.sfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;}
+
+/* FOOTER */
+.scen-btn{background:var(--bg2);border:2px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:30px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.scen-btn:hover{border-color:var(--accent);color:var(--accent);}
+.scen-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+.sort-icon{font-size:11px;color:var(--muted2);margin-left:3px;}
+.tbl th:hover{background:var(--bg4);color:var(--accent);}
+.footer{background:var(--bg2);border-top:1px solid var(--border);padding:24px;text-align:center;font-size:12px;color:var(--muted);margin-top:0;}
+
+@media(max-width:768px){.hdr{padding:20px 16px 0;}.sec{padding:20px 16px;}.area-bar{padding:10px 16px;}.t3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div class="hdr-title">🍜 <span>AI Food</span> Decision Assistant</div>
+        <div class="hdr-meta">
+          <span class="badge">5 ย่าน กทม.</span>
+          <span class="badge">100 ร้าน</span>
+          <span class="badge">Scoring 6 มิติ</span>
+          <span class="badge">22 มิถุนายน 2569</span>
+        </div>
+      </div>
+      <div style="text-align:right;font-size:13px;color:var(--muted);">
+        <div style="font-weight:600;">ผู้จัดทำ: [ชื่อผู้เข้าสอบ]</div>
+        <div style="margin-top:2px;">Team size: 8–12 คน</div>
+      </div>
+    </div>
+  </div>
+  <div class="area-bar">
+    <button class="area-btn active" onclick="filterArea('all',this)">🗺️ ทั้งหมด</button>
+    <button class="area-btn" onclick="filterArea('สยาม',this)">🏬 สยาม</button>
+    <button class="area-btn" onclick="filterArea('อารีย์',this)">🌿 อารีย์</button>
+    <button class="area-btn" onclick="filterArea('ทองหล่อ',this)">🍷 ทองหล่อ</button>
+    <button class="area-btn" onclick="filterArea('อโศก',this)">🏙️ อโศก</button>
+    <button class="area-btn" onclick="filterArea('พร้อมพงษ์',this)">💎 พร้อมพงษ์</button>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- 1. OBJECTIVE -->
+<div class="sec">
+  <div class="sec-title">🎯 Project Objective</div>
+  <div class="sec-sub">ระบบช่วยทีม 8–12 คนเลือกร้านอาหารจาก 5 ย่านในกรุงเทพฯ ด้วย AI Workflow อัตโนมัติ</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="stat-total">100</div><div class="stat-l">ร้านในระบบ</div></div>
+    <div class="stat"><div class="stat-n" id="stat-avg">—</div><div class="stat-l">ราคาเฉลี่ย/คน</div></div>
+    <div class="stat"><div class="stat-n" id="stat-group">—</div><div class="stat-l">รองรับ 8-12 คน</div></div>
+    <div class="stat"><div class="stat-n">8–12</div><div class="stat-l">คนในทีม</div></div>
+    <div class="stat"><div class="stat-n">5</div><div class="stat-l">ย่านครอบคลุม</div></div>
+    <div class="stat"><div class="stat-n">100</div><div class="stat-l">คะแนนเต็ม</div></div>
+  </div>
+</div><hr class="divider">
+
+<!-- 2. TOP 10 -->
+<div class="sec">
+  <div class="sec-title">🏆 Top 10 Ranking <span id="top10-label" style="font-size:14px;font-weight:400;color:var(--muted)"></span></div>
+  <div class="sec-sub">เรียงตามคะแนนรวม 100 คะแนน (6 มิติ)</div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th>#</th><th>ร้านอาหาร</th><th>ย่าน</th><th>คะแนนรวม</th>
+        <th>Google Rating</th><th>ราคา/คน</th>
+        <th>คุณภาพ Rating</th><th>ความเหมาะกลุ่ม</th>
+        <th>ความคุ้มราคา</th><th>ความสะดวกเดินทาง</th>
+        <th>ความครบข้อมูล</th><th>ความพิเศษ</th>
+        <th>Risk</th><th>Link</th>
+      </tr></thead>
+      <tbody id="top10-body"></tbody>
+    </table>
+  </div>
+</div><hr class="divider">
+
+<!-- 3. TOP 3 CARDS -->
+<div class="sec">
+  <div class="sec-title">⭐ Top 3 Recommendation <span id="top3-label" style="font-size:14px;font-weight:400;color:var(--muted)"></span></div>
+  <div class="sec-sub">เลือก scenario ที่ต้องการ — AI จะแนะนำ Top 3 ที่เหมาะที่สุดสำหรับสถานการณ์นั้น</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;" id="scenario-tabs">
+    <button class="scen-btn active" onclick="setScenario('safe',this)" data-s="safe">🛡️ ปลอดภัยสุด</button>
+    <button class="scen-btn" onclick="setScenario('budget',this)" data-s="budget">💰 ประหยัด <span style="font-size:11px;opacity:.7">ราคาต่อหัวน้อยที่สุด</span></button>
+    <button class="scen-btn" onclick="setScenario('quick',this)" data-s="quick">⚡ รีบกิน <span style="font-size:11px;opacity:.7">บริการเร็ว ใช้เวลาน้อย</span></button>
+    <button class="scen-btn" onclick="setScenario('work',this)" data-s="work">💼 คุยงานได้ <span style="font-size:11px;opacity:.7">เงียบ + บรรยากาศเหมาะประชุม</span></button>
+    <button class="scen-btn" onclick="setScenario('small',this)" data-s="small">👥 ทีมเล็ก <span style="font-size:11px;opacity:.7">4-8 คน</span></button>
+    <button class="scen-btn" onclick="setScenario('large',this)" data-s="large">👨‍👩‍👧‍👦 ทีมใหญ่ <span style="font-size:11px;opacity:.7">8-12 คน รองรับกลุ่ม</span></button>
+  </div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="scenario-desc"></div>
+  <div class="t3" id="top3-grid"></div>
+</div><hr class="divider">
+
+<!-- 4. COMPARISON -->
+<div class="sec">
+  <div class="sec-title">⚖️ Top 3 Comparison <span id="cmp-label" style="font-size:14px;font-weight:400;color:var(--muted)"></span></div>
+  <div class="sec-sub">เปรียบเทียบจุดเด่น ข้อควรระวัง และ trade-off</div>
+  <div class="cmp" id="compare-grid"></div>
+</div><hr class="divider">
+
+<!-- 5. AI ASK BOX -->
+<div class="sec">
+  <div class="sec-title">🤖 AI Ask Box <span id="ask-area-label" style="font-size:14px;font-weight:400;color:var(--muted)"></span></div>
+  <div class="sec-sub">ถามได้เลย! AI ตอบจาก dataset 100 ร้านเท่านั้น — ไม่ใช่ความรู้ทั่วไป</div>
+  <div class="ask-box">
+    <div class="ask-quick" id="quick-prompts"></div>
+    <div class="ask-input-row">
+      <input class="ask-input" id="ask-input" type="text"
+        placeholder="เช่น ร้านญี่ปุ่นราคาไม่เกิน 300 รองรับ 10 คน?"
+        onkeydown="if(event.key==='Enter')askAI()"/>
+      <button class="ask-btn" id="ask-btn" onclick="askAI()">ถาม AI</button>
+    </div>
+    <div class="ask-answer" id="ask-answer">
+      <div class="ask-header">
+        <span>🤖 AI ตอบจาก dataset <span id="ans-area-tag" style="color:var(--accent);font-weight:600;"></span></span>
+        <span class="ask-loading" id="ans-loading">⏳ กำลังวิเคราะห์...</span>
+      </div>
+      <div class="ask-text" id="ans-text"></div>
+      <div class="ask-cards" id="ans-cards"></div>
+    </div>
+    <div class="ask-hist" id="ask-history"></div>
+  </div>
+</div><hr class="divider">
+
+<!-- 6. RESTAURANT DATASET -->
+<div class="sec">
+  <div class="sec-title">🗃️ Restaurant Dataset <span id="ds-label" style="font-size:14px;font-weight:400;color:var(--muted)"></span></div>
+  <div class="sec-sub">ข้อมูลร้านอาหารทั้งหมด กรองได้ตามประเภท ความเสี่ยง และความเหมาะกับกลุ่ม</div>
+
+  <div class="filter-group">
+    <div class="filter-label">ประเภทอาหาร</div>
+    <div class="pill-row" id="filter-type-row">
+      <button class="pill active" onclick="setFilter('type','',this)">ทั้งหมด</button>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <div class="filter-label">ระดับความเสี่ยง</div>
+    <div class="pill-row">
+      <button class="pill active" onclick="setFilter('risk','',this)" data-group="risk">ทั้งหมด</button>
+      <button class="pill" onclick="setFilter('risk','ต่ำ',this)" data-group="risk">✅ ความเสี่ยงต่ำ</button>
+      <button class="pill" onclick="setFilter('risk','ปานกลาง',this)" data-group="risk">⚠️ ความเสี่ยงกลาง</button>
+      <button class="pill" onclick="setFilter('risk','สูง',this)" data-group="risk">❌ ความเสี่ยงสูง</button>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <div class="filter-label">ความเหมาะกับกลุ่ม</div>
+    <div class="pill-row">
+      <button class="pill active" onclick="setFilter('group','',this)" data-group="group">ทั้งหมด</button>
+      <button class="pill" onclick="setFilter('group','yes',this)" data-group="group">👥 รองรับ 8-12 คน</button>
+      <button class="pill" onclick="setFilter('group','no',this)" data-group="group">👤 กลุ่มเล็ก</button>
+    </div>
+  </div>
+
+  <div style="font-size:13px;color:var(--muted);margin-bottom:12px;" id="ds-count"></div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th onclick="sortDs('name')" style="cursor:pointer;user-select:none;">ร้านอาหาร <span id="sort-name" class="sort-icon"></span></th>
+        <th onclick="sortDs('area')" style="cursor:pointer;user-select:none;">ย่าน <span id="sort-area" class="sort-icon"></span></th>
+        <th onclick="sortDs('price_per_person')" style="cursor:pointer;user-select:none;">ราคา/คน <span id="sort-price_per_person" class="sort-icon">↕</span></th>
+        <th onclick="sortDs('google_rating')" style="cursor:pointer;user-select:none;">Rating <span id="sort-google_rating" class="sort-icon">↕</span></th>
+        <th onclick="sortDs('total_score')" style="cursor:pointer;user-select:none;">Score <span id="sort-total_score" class="sort-icon">↓</span></th>
+        <th onclick="sortDs('confidence')" style="cursor:pointer;user-select:none;">Conf. <span id="sort-confidence" class="sort-icon">↕</span></th>
+        <th onclick="sortDs('food_type')" style="cursor:pointer;user-select:none;">ประเภท <span id="sort-food_type" class="sort-icon"></span></th><th onclick="sortDs('opening_hours')" style="cursor:pointer;user-select:none;">เวลาเปิด <span id="sort-opening_hours" class="sort-icon"></span></th><th onclick="sortDs('group_suitable')" style="cursor:pointer;user-select:none;">กลุ่ม 8-12 <span id="sort-group_suitable" class="sort-icon">↕</span></th><th onclick="sortDs('risk_level')" style="cursor:pointer;user-select:none;">Risk <span id="sort-risk_level" class="sort-icon">↕</span></th><th>Link</th>
+      </tr></thead>
+      <tbody id="ds-body"></tbody>
+    </table>
+  </div>
+</div><hr class="divider">
+
+<!-- 7. HUMAN REVIEW QUEUE -->
+<div class="sec">
+  <div class="sec-title">🔍 Human Review Queue <span id="rv-label" style="font-size:14px;font-weight:400;color:var(--muted)"></span></div>
+  <div class="sec-sub">รายการที่ AI flag ว่าข้อมูลไม่ครบหรือ confidence ต่ำ — ควรยืนยันก่อนตัดสินใจจริง</div>
+  <div class="rv-list" id="review-list"></div>
+</div><hr class="divider">
+
+<!-- 8. WORKFLOW -->
+<div class="sec">
+  <div class="sec-title">⚙️ Workflow Overview</div>
+  <div class="sec-sub">กระบวนการทั้งหมดตั้งแต่ scraping จนถึง HTML report</div>
+  <div class="wf">
+    <div class="wf-s">📥 Apify Scraping</div><div class="wf-a">→</div>
+    <div class="wf-s">📊 Google Sheets Raw</div><div class="wf-a">→</div>
+    <div class="wf-s">🤖 N8n + Claude AI</div><div class="wf-a">→</div>
+    <div class="wf-s">🧮 Scoring Model</div><div class="wf-a">→</div>
+    <div class="wf-s">📧 Auto Notify</div><div class="wf-a">→</div>
+    <div class="wf-s">🌐 HTML Report</div>
+  </div>
+  <div style="margin-top:14px;font-size:13px;color:var(--muted);line-height:1.7;">
+    Apify Google Maps Scraper (52 ร้าน) + Wongnai Scraper (100 ร้าน) → Google Sheets Raw → N8n loop ส่งทีละร้านให้ Claude API enrich → คะแนน 6 มิติ → Clean_All + Scoring tabs → HTML report นี้
+  </div>
+</div><hr class="divider">
+
+<!-- 9. TOOLS -->
+<div class="sec">
+  <div class="sec-title">🛠️ Tools Used</div>
+  <div class="tools">
+    <div class="tool"><div class="tool-n">Apify</div><div class="tool-r">Google Maps Scraper + Wongnai Scraper</div></div>
+    <div class="tool"><div class="tool-n">Google Sheets</div><div class="tool-r">Raw / Clean / Scoring / Human Review</div></div>
+    <div class="tool"><div class="tool-n">Claude AI (claude-sonnet-4-6)</div><div class="tool-r">Data enrich + AI Ask Box via API</div></div>
+    <div class="tool"><div class="tool-n">N8n</div><div class="tool-r">Automation: Raw → Clean → Score → Notify</div></div>
+    <div class="tool"><div class="tool-n">HTML / CSS / JS</div><div class="tool-r">Final report page นี้</div></div>
+  </div>
+</div><hr class="divider">
+
+<!-- 10. DATA SOURCES -->
+<div class="sec">
+  <div class="sec-title">🔗 Data Sources</div>
+  <div class="src-list">
+    <div class="src">
+      <div><div class="src-n">Google Maps via Apify Google Maps Scraper</div><div class="src-d">52 ร้าน · Rating, Review Count, Address, Phone, Category, URL</div></div>
+      <a href="https://apify.com/compass/crawler-google-places" target="_blank">apify.com ↗</a>
+    </div>
+    <div class="src">
+      <div><div class="src-n">Wongnai via Apify haketa/wongnai-scraper</div><div class="src-d">100 ร้าน · Price Range, Wongnai Rating, Category, Wongnai URL</div></div>
+      <a href="https://www.wongnai.com/restaurants/bangkok" target="_blank">wongnai.com ↗</a>
+    </div>
+  </div>
+</div><hr class="divider">
+
+<!-- 11. SCORING CRITERIA -->
+<div class="sec">
+  <div class="sec-title">📐 Scoring Criteria — 100 คะแนน</div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>#</th><th>มิติการประเมิน</th><th>น้ำหนัก</th><th>เกณฑ์การให้คะแนน</th><th style="width:100px">สัดส่วน</th></tr></thead>
+      <tbody>
+        <tr><td><strong>S1</strong></td><td>คุณภาพ Rating & Review</td><td>25</td><td>Google Rating (60%) + จำนวนรีวิว max 2,000 (40%)</td><td><div class="sbar"><div class="sfill" style="width:25%"></div></div></td></tr>
+        <tr><td><strong>S2</strong></td><td>ความเหมาะกับกลุ่ม</td><td>20</td><td>รองรับ 8–12 คน = 20 pts / ไม่เหมาะ = 8 pts</td><td><div class="sbar"><div class="sfill" style="width:20%"></div></div></td></tr>
+        <tr><td><strong>S3</strong></td><td>ความคุ้มค่าราคา</td><td>15</td><td>≤150฿=15 / ≤300฿=12 / ≤500฿=9 / ≤800฿=6 / >800฿=3</td><td><div class="sbar"><div class="sfill" style="width:15%"></div></div></td></tr>
+        <tr><td><strong>S4</strong></td><td>ความสะดวกในการเดินทาง</td><td>15</td><td>BTS/MRT ทางออกตรง=15 / BTS/MRT=12 / เดินได้=9 / ไกล=5</td><td><div class="sbar"><div class="sfill" style="width:15%"></div></div></td></tr>
+        <tr><td><strong>S5</strong></td><td>ความครบถ้วนของข้อมูล</td><td>15</td><td>AI Confidence score (0–100%) × 15</td><td><div class="sbar"><div class="sfill" style="width:15%"></div></div></td></tr>
+        <tr><td><strong>S6</strong></td><td>ความพิเศษ & ประสบการณ์</td><td>10</td><td>Work-friendly=10 / เงียบ=8 / ปานกลาง=6 / เสียงดัง=4</td><td><div class="sbar"><div class="sfill" style="width:10%"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  AI Food Decision Assistant · 5 ย่านกรุงเทพฯ · 100 ร้าน · Scoring: 25+20+15+15+15+10<br>
+  Apify · Google Sheets · Claude AI (claude-sonnet-4-6) · N8n · HTML/CSS/JS
+</div>
+
+<script>
+const DATA = [{"name": "ครัวเจียงใหม่ - ทองหล่อ", "area": "ทองหล่อ", "food_type": "ภัตตาคารอาหารไทย (เน้นอาหารเหนือ)", "price_per_person": 300, "price_range": "200-500 บาท", "google_rating": 4.8, "google_reviews": 2796, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 75.0, "S1_rating": 24.4, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 11.3, "S6_unique": 6.0, "total_score": 85.7, "google_maps_url": "https://maps.google.com/?q=ครัวเจียงใหม่+ทองหล่อ+125/24+ถ.ทองหล่อ+เขตวัฒนา", "wongnai_url": ""}, {"name": "ส้มตำนัว", "area": "สยาม", "food_type": "อาหารไทย / อีสาน / ส้มตำ", "price_per_person": 150, "price_range": "100-250 บาท", "google_rating": 4.4, "google_reviews": 3559, "group_suitable": true, "opening_hours": "10:00 - 22:00 (โดยประมาณ)", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 23.2, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 85.0, "google_maps_url": "https://maps.google.com/?q=ส้มตำนัว+392+ถนนพระรามที่1+ปทุมวัน", "wongnai_url": "https://www.wongnai.com/restaurants/som-tum-nua"}, {"name": "โค-ร-ต KORATA (Siam Square)", "area": "สยาม", "food_type": "ภัตตาคารอาหารไทย", "price_per_person": 300, "price_range": "200-400 บาท", "google_rating": 4.9, "google_reviews": 2622, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 24.7, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 83.5, "google_maps_url": "https://maps.google.com/?q=KORATA+Siam+Square", "wongnai_url": ""}, {"name": "Piranya@Siam (ปิรันย่า@สยาม)", "area": "สยาม", "food_type": "อาหารไทย", "price_per_person": 250, "price_range": "150-400 บาท", "google_rating": 4.8, "google_reviews": 1464, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล (แนะนำตรวจสอบก่อนไป)", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 21.7, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 80.5, "google_maps_url": "https://maps.google.com/?q=Piranya+Siam+Square+Soi+9+Bangkok", "wongnai_url": "https://www.wongnai.com/restaurants/piranya-siam"}, {"name": "บ้านไอซ์ สาขา ทองหล่อ", "area": "ทองหล่อ", "food_type": "ภัตตาคารอาหารไทย", "price_per_person": 400, "price_range": "300-600 บาท/คน", "google_rating": 4.6, "google_reviews": 2035, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 65.0, "S1_rating": 23.8, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 9.8, "S6_unique": 4.0, "total_score": 78.6, "google_maps_url": "https://maps.google.com/?q=บ้านไอซ์+ทองหล่อ+115+ถ.ทองหล่อ+เขตวัฒนา", "wongnai_url": ""}, {"name": "เพลินพุง Noodles & More สยามสแควร์วัน", "area": "สยาม", "food_type": "อาหารไทย / ก๋วยเตี๋ยว", "price_per_person": 150, "price_range": "100-200", "google_rating": 4.4, "google_reviews": 748, "group_suitable": true, "opening_hours": "ไม่ระบุ (คาดว่าตามเวลาห้างฯ 10:00-22:00)", "risk_level": "ต่ำ", "confidence": 62.0, "S1_rating": 16.9, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 9.3, "S6_unique": 4.0, "total_score": 77.2, "google_maps_url": "https://maps.google.com/?q=เพลินพุง+Noodles+%26+More+สยามสแควร์วัน", "wongnai_url": ""}, {"name": "ครัวแม่ปัญญา", "area": "อารีย์", "food_type": "อาหารตามสั่ง / อาหารไทยทั่วไป", "price_per_person": 80, "price_range": "50-150 บาท", "google_rating": 4.4, "google_reviews": 262, "group_suitable": true, "opening_hours": "ไม่ระบุ", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 14.5, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 75.8, "google_maps_url": "https://www.google.com/maps/search/ครัวแม่ปัญญา+ซอยอารีย์+2+พญาไท", "wongnai_url": ""}, {"name": "White Flower Factory - ครัวดอกไม้ขาว", "area": "สยาม", "food_type": "อาหารไทย", "price_per_person": 350, "price_range": "200-500", "google_rating": 4.6, "google_reviews": 1521, "group_suitable": true, "opening_hours": "ไม่ระบุ", "risk_level": "ต่ำ", "confidence": 62.0, "S1_rating": 21.4, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 9.3, "S6_unique": 4.0, "total_score": 75.7, "google_maps_url": "https://maps.google.com/?q=White+Flower+Factory+388+ถนนพระรามที่1+ปทุมวัน", "wongnai_url": ""}, {"name": "อรรถรส", "area": "พร้อมพงษ์", "food_type": "ภัตตาคารอาหารไทย", "price_per_person": 400, "price_range": "200-600", "google_rating": 4.4, "google_reviews": 1163, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 62.0, "S1_rating": 19.0, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 9.3, "S6_unique": 6.0, "total_score": 75.3, "google_maps_url": "https://maps.google.com/?q=อรรถรส+59/3+ซ.สุขุมวิท+39+เขตวัฒนา", "wongnai_url": ""}, {"name": "กับข้าว' กับปลา เทอร์มินัล 21 อโศก", "area": "อโศก", "food_type": "ภัตตาคารอาหารไทย", "price_per_person": 250, "price_range": "200-400", "google_rating": 4.1, "google_reviews": 679, "group_suitable": true, "opening_hours": "10:00-22:00 (โดยประมาณตามเวลาห้าง)", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 15.7, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 74.5, "google_maps_url": "https://maps.google.com/?q=กับข้าว+กับปลา+Terminal+21+Asok", "wongnai_url": ""}, {"name": "แมดโมอา อโศก (Mad Moa Asok)", "area": "อโศก", "food_type": "ร้านอาหารตะวันตก", "price_per_person": 400, "price_range": "300-500 บาท", "google_rating": 4.8, "google_reviews": 160, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 15.2, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 10.0, "total_score": 74.5, "google_maps_url": "https://maps.google.com/?q=แมดโมอา+อโศก+139+สุขุมวิท+21+ซอย+1", "wongnai_url": ""}, {"name": "แซ่บสุดใจ อารีย์ (Sabsudjai Ari)", "area": "อารีย์", "food_type": "อาหารอีสาน / อาหารไทย", "price_per_person": 150, "price_range": "100-200", "google_rating": 4.8, "google_reviews": 161, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 15.2, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 74.5, "google_maps_url": "https://www.google.com/maps/search/แซ่บสุดใจ+อารีย์+466/18+ถ.พหลโยธิน+เขตพญาไท", "wongnai_url": "https://www.wongnai.com/search?q=แซ่บสุดใจ+อารีย์"}, {"name": "อร่อย อารีย์ Aroi Ari", "area": "อารีย์", "food_type": "อาหารไทย", "price_per_person": 150, "price_range": "100-200", "google_rating": 4.6, "google_reviews": 142, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 14.5, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 74.3, "google_maps_url": "https://www.google.com/maps/search/อร่อย+อารีย์+136+พระรามที่+6+ซอย+30+พญาไท", "wongnai_url": ""}, {"name": "Starbucks Siam Center (ชั้น 1)", "area": "สยาม", "food_type": "Coffee Shop / Tea House", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 4.0, "google_reviews": 2, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล (คาดการณ์ตามห้างฯ ~10:00-22:00)", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 12.0, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 10.0, "total_score": 74.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Cantina Italian Kitchen (Ari)", "area": "อารีย์", "food_type": "ร้านอาหารอิตาเลียน", "price_per_person": 400, "price_range": "300-600 บาท/คน", "google_rating": 4.6, "google_reviews": 800, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล (แนะนำตรวจสอบก่อนไป)", "risk_level": "ต่ำ", "confidence": 70.0, "S1_rating": 17.8, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 10.5, "S6_unique": 4.0, "total_score": 73.3, "google_maps_url": "https://maps.google.com/?q=Cantina+Italian+Kitchen+Ari+Bangkok", "wongnai_url": "https://www.wongnai.com/restaurants/cantina-italian-kitchen-ari"}, {"name": "Kogoro Katsu - Siam Square", "area": "สยาม", "food_type": "ภัตตาคารอาหารทงคัทสึ (Japanese Tonkatsu)", "price_per_person": 350, "price_range": "250-500 บาท", "google_rating": 4.6, "google_reviews": 717, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 17.4, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 73.2, "google_maps_url": "https://maps.google.com/?q=Kogoro+Katsu+Siam+Square", "wongnai_url": ""}, {"name": "DonDon", "area": "พร้อมพงษ์", "food_type": "ภัตตาคารอาหารญี่ปุ่น", "price_per_person": 300, "price_range": "200-500 บาท", "google_rating": 4.4, "google_reviews": 622, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 16.3, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 73.1, "google_maps_url": "https://maps.google.com/?q=DonDon+สุขุมวิท+39", "wongnai_url": ""}, {"name": "KURATHAI SHOKUDO", "area": "พร้อมพงษ์", "food_type": "บุฟเฟต์อาหารไทย-ญี่ปุ่น", "price_per_person": 0, "price_range": "ไม่ระบุ", "google_rating": 4.8, "google_reviews": 2031, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 62.0, "S1_rating": 24.4, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 9.3, "S6_unique": 4.0, "total_score": 72.7, "google_maps_url": "https://maps.google.com/?q=KURATHAI+SHOKUDO+M+Tower+Sukhumvit+35", "wongnai_url": ""}, {"name": "สวรรค์โปรด สาขาอารีย์", "area": "อารีย์", "food_type": "อาหารไทย", "price_per_person": 300, "price_range": "200-400 บาท", "google_rating": 4.7, "google_reviews": 27, "group_suitable": true, "opening_hours": "ไม่ระบุ", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 14.2, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 72.5, "google_maps_url": "https://maps.google.com/?q=สวรรค์โปรด+สาขาอารีย์+ถนนพหลโยธิน+เขตพญาไท", "wongnai_url": ""}, {"name": "กะเพราตาแป๊ะ อโศก", "area": "อโศก", "food_type": "Rice Dish / ข้าวกะเพรา", "price_per_person": 150, "price_range": "101-250 บาท", "google_rating": 4.15, "google_reviews": 129, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.1, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 72.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Roast theCOMMONS Thonglor", "area": "ทองหล่อ", "food_type": "American", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.95, "google_reviews": 136, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 55.0, "S1_rating": 12.5, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 10.0, "total_score": 71.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "สวนผัก โอ้กะจู๋ Siam Square One ชั้น 3", "area": "สยาม", "food_type": "Clean Food / Salad", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.31, "google_reviews": 371, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 78.0, "S1_rating": 14.8, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 11.7, "S6_unique": 4.0, "total_score": 71.5, "google_maps_url": "", "wongnai_url": ""}, {"name": "Big Mama Pizzeria (บิ๊กมามา พิซเซอเรีย) สุขุมวิท 21", "area": "อโศก", "food_type": "Pizza / อิตาเลียน", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.02, "google_reviews": 509, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 65.0, "S1_rating": 14.6, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 9.8, "S6_unique": 6.0, "total_score": 71.4, "google_maps_url": "", "wongnai_url": ""}, {"name": "ทงคัตสึ วาโก สาขา เทอร์มินอล 21 อโศก", "area": "อโศก", "food_type": "ทงคัทสึ / อาหารญี่ปุ่น", "price_per_person": 400, "price_range": "300-600 บาท", "google_rating": 4.4, "google_reviews": 446, "group_suitable": true, "opening_hours": "10:00-22:00 (ตามเวลาห้าง)", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 15.4, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 71.2, "google_maps_url": "https://maps.google.com/?q=ทงคัตสึ+วาโก+Terminal+21+Asok", "wongnai_url": ""}, {"name": "Barney's Burger Joint อารีย์", "area": "อารีย์", "food_type": "Burger", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 4.52, "google_reviews": 75, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 60.0, "S1_rating": 13.9, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 9.0, "S6_unique": 4.0, "total_score": 70.9, "google_maps_url": "", "wongnai_url": ""}, {"name": "APH Cafe - สุขุมวิท 21 (อโศก) Asok Pethouse", "area": "อโศก", "food_type": "Cafe", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.96, "google_reviews": 4, "group_suitable": true, "opening_hours": "nan", "risk_level": "สูง", "confidence": 25.0, "S1_rating": 14.9, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 3.8, "S6_unique": 10.0, "total_score": 69.7, "google_maps_url": "", "wongnai_url": ""}, {"name": "Eat Am Are MBK CENTER", "area": "สยาม", "food_type": "Steak House", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 4.3, "google_reviews": 46, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.1, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 69.4, "google_maps_url": "", "wongnai_url": ""}, {"name": "อากงข้าวมันไก่-สุขุมวิท 10", "area": "พร้อมพงษ์", "food_type": "Rice Dish / ข้าวมันไก่", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 4.13, "google_reviews": 33, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 12.6, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 69.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Gokfayuen ทองหล่อ", "area": "ทองหล่อ", "food_type": "Noodles", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 3.97, "google_reviews": 277, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 40.0, "S1_rating": 13.3, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 6.0, "S6_unique": 6.0, "total_score": 69.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Lay Lao - Ari (เล ลาว อารีย์)", "area": "อารีย์", "food_type": "Isan Food / อาหารอีสาน", "price_per_person": 375, "price_range": "251 - 500 บาท", "google_rating": 3.93, "google_reviews": 101, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 65.0, "S1_rating": 12.3, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 9.8, "S6_unique": 6.0, "total_score": 69.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "Tonkatsu Wako สยามเซ็นเตอร์", "area": "สยาม", "food_type": "Japanese", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.2, "google_reviews": 171, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 70.0, "S1_rating": 13.5, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 10.5, "S6_unique": 4.0, "total_score": 69.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "บุญตงเกียรติ ข้าวมันไก่สิงคโปร์ ทองหล่อ", "area": "ทองหล่อ", "food_type": "Rice Dish / ข้าวมันไก่สิงคโปร์", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 3.71, "google_reviews": 176, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.0, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 68.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "Kopihub Kopihub Prime | Ari", "area": "อารีย์", "food_type": "Dim Sum / คาเฟ่", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.99, "google_reviews": 24, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 35.0, "S1_rating": 12.1, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 10.0, "total_score": 68.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Shinsei Sushi Ari", "area": "อารีย์", "food_type": "Sushi / Japanese", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.02, "google_reviews": 106, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 12.6, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 67.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "Homey Taste รสบ้าน สาขาอารีย์", "area": "อารีย์", "food_type": "ภัตตาคารอาหารไทย", "price_per_person": 250, "price_range": "200-350", "google_rating": 4.8, "google_reviews": 5, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "สูง", "confidence": 20.0, "S1_rating": 14.4, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 3.0, "S6_unique": 6.0, "total_score": 67.4, "google_maps_url": "https://maps.google.com/?q=Homey+Taste+รสบ้าน+อารีย์+36/10+ถ.พหลโยธิน+เขตพญาไท", "wongnai_url": ""}, {"name": "ส้มตำนัว Siam Square Soi 5", "area": "สยาม", "food_type": "Isan Food / อาหารอีสาน", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 3.7, "google_reviews": 283, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.5, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 67.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Hasul สยามเซ็นเตอร์ (Siam Center)", "area": "สยาม", "food_type": "Korean", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 4.14, "google_reviews": 34, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 12.6, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 67.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Paknang อารีย์", "area": "อารีย์", "food_type": "อาหารใต้", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.35, "google_reviews": 34, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 13.2, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 67.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "Cantina Italian Kitchen อารีย์", "area": "อารีย์", "food_type": "Italian", "price_per_person": 750, "price_range": "501 - 1,000 บาท", "google_rating": 4.19, "google_reviews": 48, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 40.0, "S1_rating": 12.8, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.0, "S6_unique": 10.0, "total_score": 66.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "Nobu Japanese Restaurant ทองหล่อ", "area": "ทองหล่อ", "food_type": "Japanese", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.26, "google_reviews": 42, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 13.0, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 66.7, "google_maps_url": "", "wongnai_url": ""}, {"name": "ALATi Siam Kempinski Hotel Bangkok", "area": "สยาม", "food_type": "International Food", "price_per_person": 1500, "price_range": "มากกว่า 1,000 บาท", "google_rating": 4.34, "google_reviews": 62, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.3, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 10.0, "total_score": 66.6, "google_maps_url": "https://maps.google.com/?q=ALATi+Siam+Kempinski+Hotel+Bangkok", "wongnai_url": ""}, {"name": "ร้านคานิเทงโกคุ สาขาอโศก", "area": "อโศก", "food_type": "ภัตตาคารอาหารญี่ปุ่น", "price_per_person": 1500, "price_range": "1,000 - 2,500 บาท/คน", "google_rating": 4.9, "google_reviews": 407, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 16.7, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 66.5, "google_maps_url": "https://maps.google.com/?q=คานิเทงโกคุ+อโศก+สุขุมวิท23", "wongnai_url": ""}, {"name": "เหลาเหลา อารีย์", "area": "อารีย์", "food_type": "Chinese", "price_per_person": 375, "price_range": "251-500", "google_rating": 3.9, "google_reviews": 218, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.8, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 66.5, "google_maps_url": "", "wongnai_url": ""}, {"name": "Ongtong Khaosoi (อองตอง ข้าวซอย) อารีย์", "area": "อารีย์", "food_type": "Thai", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.86, "google_reviews": 238, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.8, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 66.5, "google_maps_url": "", "wongnai_url": ""}, {"name": "อร่อย อารีย์ (Aroi Ari)", "area": "อารีย์", "food_type": "À La Carte / อาหารตามสั่ง", "price_per_person": 100, "price_range": "ต่ำกว่า 100 บาท", "google_rating": 3.86, "google_reviews": 8, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 25.0, "S1_rating": 11.6, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 3.8, "S6_unique": 4.0, "total_score": 66.4, "google_maps_url": "", "wongnai_url": ""}, {"name": "NICO NICO ทองหล่อ", "area": "ทองหล่อ", "food_type": "Breakfast/Brunch", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.1, "google_reviews": 47, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 12.5, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 66.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "ปากหม้ออารีย์", "area": "อารีย์", "food_type": "อาหารไทย", "price_per_person": 80, "price_range": "ต่ำกว่า 100 บาท", "google_rating": 3.78, "google_reviews": 12, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 25.0, "S1_rating": 11.4, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 3.8, "S6_unique": 4.0, "total_score": 66.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "69 Rock Men ทองหล่อ", "area": "ทองหล่อ", "food_type": "Ramen", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.22, "google_reviews": 54, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 12.9, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 66.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "ไทยไทย MBK", "area": "สยาม", "food_type": "Street Food / อาหารไทย", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.1, "google_reviews": 132, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.0, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 66.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "SUSHI SEKI สยามพารากอน", "area": "สยาม", "food_type": "Japanese", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.06, "google_reviews": 43, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.4, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 66.1, "google_maps_url": "", "wongnai_url": ""}, {"name": "SOUSAKU อารีย์", "area": "อารีย์", "food_type": "Japanese", "price_per_person": 750, "price_range": "501-1000", "google_rating": 4.12, "google_reviews": 273, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.7, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 66.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "Jérôme Cheesecake สยามพารากอน", "area": "สยาม", "food_type": "International Food", "price_per_person": 750, "price_range": "501-1000", "google_rating": 4.22, "google_reviews": 5, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 35.0, "S1_rating": 12.7, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 10.0, "total_score": 65.9, "google_maps_url": "", "wongnai_url": ""}, {"name": "OSAKA OHSHO (โอซาก้า โอโช) – Thonglor ฟิฟท์ตี้ฟิฟท์ ทองหล่อ", "area": "ทองหล่อ", "food_type": "Ramen / ญี่ปุ่น", "price_per_person": 375, "price_range": "251 - 500 บาท", "google_rating": 3.84, "google_reviews": 73, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 11.9, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 65.6, "google_maps_url": "", "wongnai_url": ""}, {"name": "กินดีอร่อยไร้สาร เจ อเวนิว ทองหล่อ15", "area": "ทองหล่อ", "food_type": "Thai / Vegetarian (เจ)", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 4.01, "google_reviews": 4, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 35.0, "S1_rating": 12.0, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 4.0, "total_score": 65.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Gourmet Eats พารากอน", "area": "สยาม", "food_type": "Fast Food", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 3.95, "google_reviews": 25, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 35.0, "S1_rating": 12.0, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 4.0, "total_score": 65.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "Mo-Mo-Paradise Siam Center", "area": "สยาม", "food_type": "Shabu/Sukiyaki/Hot Pot", "price_per_person": 750, "price_range": "501-1000 THB", "google_rating": 4.52, "google_reviews": 39, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 62.0, "S1_rating": 13.8, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 9.3, "S6_unique": 4.0, "total_score": 65.1, "google_maps_url": "", "wongnai_url": ""}, {"name": "Madam Saranair (มาดามสาระแหน่) - สุขุมวิท 21", "area": "อโศก", "food_type": "Thai", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.35, "google_reviews": 43, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 13.3, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 65.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "Fam Time สยาม", "area": "สยาม", "food_type": "Italian", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.25, "google_reviews": 65, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 13.1, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 64.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "Food Legends by MBK MBK Center", "area": "สยาม", "food_type": "À La Carte / Food Court", "price_per_person": 100, "price_range": "ต่ำกว่า 100 บาท", "google_rating": 3.85, "google_reviews": 2, "group_suitable": true, "opening_hours": "nan", "risk_level": "สูง", "confidence": 15.0, "S1_rating": 11.6, "S2_group": 20.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 2.3, "S6_unique": 4.0, "total_score": 64.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "Nobu", "area": "ทองหล่อ", "food_type": "ภัตตาคารอาหารญี่ปุ่น", "price_per_person": 2500, "price_range": "2,000 - 4,000+ บาท/คน", "google_rating": 4.5, "google_reviews": 290, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 72.0, "S1_rating": 15.0, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 10.8, "S6_unique": 4.0, "total_score": 64.8, "google_maps_url": "https://maps.google.com/?q=Nobu+Bangkok+414+Thonglor", "wongnai_url": ""}, {"name": "KINKI Japanese Progressive Dining & Bar Thonglor", "area": "ทองหล่อ", "food_type": "Japanese", "price_per_person": 750, "price_range": "501-1000 baht", "google_rating": 4.28, "google_reviews": 125, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 62.0, "S1_rating": 13.5, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 9.3, "S6_unique": 4.0, "total_score": 64.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "Thong Grill Hide & Shabu Thonglor Soi 9", "area": "ทองหล่อ", "food_type": "Shabu / Sukiyaki / Hot Pot", "price_per_person": 750, "price_range": "501-1000 บาท", "google_rating": 4.91, "google_reviews": 30, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 52.0, "S1_rating": 14.9, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 7.8, "S6_unique": 4.0, "total_score": 64.7, "google_maps_url": "", "wongnai_url": ""}, {"name": "ห้องทานข้าวสุพรรณิการ์ ทองหล่อ", "area": "ทองหล่อ", "food_type": "Thai", "price_per_person": 750, "price_range": "501-1000", "google_rating": 4.01, "google_reviews": 91, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 12.5, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 64.7, "google_maps_url": "", "wongnai_url": ""}, {"name": "Ootoya Japanese Restaurant (โอโตยะ อาหารญี่ปุ่น) ลา วิลล่า อารีย์", "area": "อารีย์", "food_type": "Japanese", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.22, "google_reviews": 15, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 12.7, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 64.5, "google_maps_url": "", "wongnai_url": ""}, {"name": "เบิร์นบุษบา สยามพารากอน", "area": "สยาม", "food_type": "Thai", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.15, "google_reviews": 44, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 12.7, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 64.4, "google_maps_url": "", "wongnai_url": ""}, {"name": "JHOL Coastal Indian Cuisine Restaurant สุขุมวิท 18", "area": "พร้อมพงษ์", "food_type": "Indian", "price_per_person": 1000, "price_range": "1,000 บาทขึ้นไป", "google_rating": 4.44, "google_reviews": 72, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 65.0, "S1_rating": 13.7, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 9.8, "S6_unique": 6.0, "total_score": 64.4, "google_maps_url": "https://maps.google.com/?q=JHOL+Coastal+Indian+Cuisine+Restaurant+Sukhumvit+18", "wongnai_url": ""}, {"name": "Mellow Restaurant & Bar Penny's Balcony ทองหล่อ 16", "area": "ทองหล่อ", "food_type": "Pub & Restaurant / อาหารไทย-ฝรั่ง", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.02, "google_reviews": 91, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 45.0, "S1_rating": 12.5, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 64.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "คนละหม้อ อาหารทะเลพรีเมียม (KONLAMOH PREMIUM SEAFOOD) ทองหล่อ", "area": "ทองหล่อ", "food_type": "อาหารทะเล (Seafood)", "price_per_person": 375, "price_range": "251 - 500 บาท", "google_rating": 4.35, "google_reviews": 24, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 40.0, "S1_rating": 13.2, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.0, "S6_unique": 4.0, "total_score": 64.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "Tonchin Ramen Siam Paragon", "area": "สยาม", "food_type": "Ramen / Japanese", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.99, "google_reviews": 60, "group_suitable": true, "opening_hours": "ตามเวลาเปิดของ Siam Paragon (10:00-22:00)", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.3, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 64.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "คั่วกลิ้ง+ผักสด ทองหล่อ", "area": "ทองหล่อ", "food_type": "อาหารไทย (คั่วกลิ้ง, อาหารปักษ์ใต้)", "price_per_person": 750, "price_range": "501-1000", "google_rating": 3.99, "google_reviews": 147, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.7, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 63.5, "google_maps_url": "", "wongnai_url": ""}, {"name": "On the Table สยามเซ็นเตอร์", "area": "สยาม", "food_type": "Fusion Food", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.78, "google_reviews": 181, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 40.0, "S1_rating": 12.2, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 6.0, "S6_unique": 4.0, "total_score": 63.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "Another Hound Café สยามพารากอน", "area": "สยาม", "food_type": "Fusion Food", "price_per_person": 750, "price_range": "501-1000", "google_rating": 3.88, "google_reviews": 139, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.3, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 6.0, "total_score": 63.1, "google_maps_url": "", "wongnai_url": ""}, {"name": "MAGURO Sushi สยามสแควร์วัน", "area": "สยาม", "food_type": "Japanese", "price_per_person": 750, "price_range": "501-1000", "google_rating": 4.19, "google_reviews": 46, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 12.8, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 63.1, "google_maps_url": "", "wongnai_url": ""}, {"name": "GYUMA Japanese BBQ Restaurant ทองหล่อ", "area": "ทองหล่อ", "food_type": "Japanese BBQ / Grill", "price_per_person": 750, "price_range": "501-1000 บาท", "google_rating": 4.08, "google_reviews": 106, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 12.8, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 63.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "บ้านไอซ์ ทองหล่อ", "area": "ทองหล่อ", "food_type": "Thai", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.88, "google_reviews": 187, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 35.0, "S1_rating": 12.6, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 4.0, "total_score": 62.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "Honmono Sushi ทองหล่อ", "area": "ทองหล่อ", "food_type": "Japanese Buffet / Sushi", "price_per_person": 1000, "price_range": "มากกว่า 1,000 บาท", "google_rating": 4.28, "google_reviews": 120, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.4, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 62.7, "google_maps_url": "", "wongnai_url": ""}, {"name": "ข้าวมันไก่สิงคโปร์ by Chef Pung สาขาพร้อมพงษ์", "area": "พร้อมพงษ์", "food_type": "ข้าวมันไก่สิงคโปร์ / อาหารจีน", "price_per_person": 120, "price_range": "100-200", "google_rating": 4.3, "google_reviews": 51, "group_suitable": false, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.2, "S2_group": 8.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 62.4, "google_maps_url": "https://maps.google.com/?q=ข้าวมันไก่สิงคโปร์+by+Chef+Pung+พร้อมพงษ์+สุขุมวิท26", "wongnai_url": ""}, {"name": "ต้นโอ๊ก", "area": "สยาม", "food_type": "ภัตตาคารอาหารไทย", "price_per_person": 0, "price_range": "ไม่มีข้อมูลราคา", "google_rating": 4.5, "google_reviews": 307, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 15.0, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 62.3, "google_maps_url": "https://www.google.com/maps/search/ต้นโอ๊ก+432/5+ซอยสยามสแควร์+9+ปทุมวัน", "wongnai_url": ""}, {"name": "Seinikuten อารีย์", "area": "อารีย์", "food_type": "Japanese", "price_per_person": 750, "price_range": "501-1000", "google_rating": 3.97, "google_reviews": 83, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 40.0, "S1_rating": 12.3, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.0, "S6_unique": 6.0, "total_score": 62.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "ABO Cafe - กินตามกรุ๊ปเลือด", "area": "อโศก", "food_type": "ร้านกาแฟ / Concept Cafe", "price_per_person": 0, "price_range": "ไม่มีข้อมูล", "google_rating": 5.0, "google_reviews": 1, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "สูง", "confidence": 15.0, "S1_rating": 15.0, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 2.3, "S6_unique": 10.0, "total_score": 62.3, "google_maps_url": "https://maps.google.com/?q=ABO+Cafe+%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%B8%E0%B8%A1%E0%B8%A7%E0%B8%B4%E0%B8%9421+%E0%B8%A7%E0%B8%B1%E0%B8%92%E0%B8%99%E0%B8%B2+%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E", "wongnai_url": ""}, {"name": "โกโก้ สยามสแควร์ ซอย 3", "area": "สยาม", "food_type": "Thai", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.9, "google_reviews": 56, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 35.0, "S1_rating": 12.0, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 4.0, "total_score": 62.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "Le Boeuf The Steak & Fries Bistro อารีย์", "area": "อารีย์", "food_type": "Steak House", "price_per_person": 1200, "price_range": "1,000 บาทขึ้นไป", "google_rating": 4.24, "google_reviews": 54, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.0, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 6.0, "total_score": 62.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "Four Seasons Chinese Restaurant สยามพารากอน", "area": "สยาม", "food_type": "Chinese", "price_per_person": 750, "price_range": "501-1000", "google_rating": 3.86, "google_reviews": 260, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.9, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 61.6, "google_maps_url": "", "wongnai_url": ""}, {"name": "KENNYS'BKK (Ari)", "area": "อารีย์", "food_type": "Pizza", "price_per_person": 750, "price_range": "501-1000", "google_rating": 4.33, "google_reviews": 47, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 40.0, "S1_rating": 13.2, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.0, "S6_unique": 4.0, "total_score": 61.2, "google_maps_url": "", "wongnai_url": ""}, {"name": "Sukiya MBK", "area": "สยาม", "food_type": "Japanese", "price_per_person": 175, "price_range": "101-250 THB", "google_rating": 3.35, "google_reviews": 3, "group_suitable": true, "opening_hours": "nan", "risk_level": "สูง", "confidence": 20.0, "S1_rating": 10.1, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 12.0, "S5_data": 3.0, "S6_unique": 4.0, "total_score": 61.1, "google_maps_url": "", "wongnai_url": ""}, {"name": "AKIYOSHI สยามสแควร์วัน", "area": "สยาม", "food_type": "Shabu / Sukiyaki / Hot Pot", "price_per_person": 750, "price_range": "501-1000", "google_rating": 3.75, "google_reviews": 152, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 45.0, "S1_rating": 12.0, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.8, "S6_unique": 4.0, "total_score": 60.8, "google_maps_url": "https://www.google.com/maps/search/AKIYOSHI+สยามสแควร์วัน", "wongnai_url": ""}, {"name": "KHAO NIAO ข้าวเหนียว พญาไท", "area": "อารีย์", "food_type": "Isan Food (อาหารอีสาน)", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 3.9, "google_reviews": 15, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 25.0, "S1_rating": 11.8, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 3.8, "S6_unique": 4.0, "total_score": 60.5, "google_maps_url": "", "wongnai_url": ""}, {"name": "ธานี ข้าวหมูแดง - หมูกรอบ อารีย์", "area": "อารีย์", "food_type": "ข้าวหมูแดง / หมูกรอบ / อาหารจานข้าว", "price_per_person": 80, "price_range": "ต่ำกว่า 100 บาท", "google_rating": 3.8, "google_reviews": 230, "group_suitable": false, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 55.0, "S1_rating": 12.6, "S2_group": 8.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 59.8, "google_maps_url": "", "wongnai_url": ""}, {"name": "ใจสั่งยำ @ซอยอารีย์", "area": "อารีย์", "food_type": "ยำ / อาหารไทย", "price_per_person": 80, "price_range": "50-150 บาท", "google_rating": 4.6, "google_reviews": 17, "group_suitable": false, "opening_hours": "ไม่ระบุ (ฟู้ดทรัค - ควรตรวจสอบก่อนไป)", "risk_level": "สูง", "confidence": 35.0, "S1_rating": 13.9, "S2_group": 8.0, "S3_price": 15.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 4.0, "total_score": 58.1, "google_maps_url": "https://maps.google.com/?q=ใจสั่งยำ+อารีย์", "wongnai_url": ""}, {"name": "Umenohana นิฮอนมูระมอลล์", "area": "ทองหล่อ", "food_type": "Japanese", "price_per_person": 1500, "price_range": "1,000 บาทขึ้นไป", "google_rating": 4.46, "google_reviews": 169, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 65.0, "S1_rating": 14.2, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 5.0, "S5_data": 9.8, "S6_unique": 6.0, "total_score": 58.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "เปย์ ทองหล่อ", "area": "ทองหล่อ", "food_type": "ร้านอาหาร (ไม่ระบุประเภทอาหารชัดเจน)", "price_per_person": 0, "price_range": "ไม่มีข้อมูล", "google_rating": 5.0, "google_reviews": 34, "group_suitable": true, "opening_hours": "ไม่มีข้อมูล", "risk_level": "ปานกลาง", "confidence": 25.0, "S1_rating": 15.2, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 3.8, "S6_unique": 4.0, "total_score": 57.9, "google_maps_url": "https://www.google.com/maps/search/เปย์+ทองหล่อ+J+Avenue+323/1+ถนนทองหล่อ+วัฒนา", "wongnai_url": ""}, {"name": "อาหารเหนือบ้านดอกแก้ว อารีย์สัมพันธ์ 10", "area": "อารีย์", "food_type": "Northern Food (อาหารเหนือ)", "price_per_person": 175, "price_range": "101-250 บาท", "google_rating": 4.13, "google_reviews": 6, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 30.0, "S1_rating": 12.4, "S2_group": 20.0, "S3_price": 12.0, "S4_travel": 5.0, "S5_data": 4.5, "S6_unique": 4.0, "total_score": 57.9, "google_maps_url": "", "wongnai_url": ""}, {"name": "LAVA Fire Grill (Steak, Wagyu) ทองหล่อ", "area": "ทองหล่อ", "food_type": "Steak House / Wagyu", "price_per_person": 1500, "price_range": "1,000 บาทขึ้นไป", "google_rating": 4.28, "google_reviews": 8, "group_suitable": true, "opening_hours": "nan", "risk_level": "สูง", "confidence": 25.0, "S1_rating": 12.9, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 3.8, "S6_unique": 6.0, "total_score": 57.6, "google_maps_url": "", "wongnai_url": ""}, {"name": "ร้านประจำ", "area": "อโศก", "food_type": "ภัตตาคารอาหารไทย", "price_per_person": 0, "price_range": "ไม่ระบุ", "google_rating": 4.3, "google_reviews": 36, "group_suitable": true, "opening_hours": "ไม่ระบุ", "risk_level": "ปานกลาง", "confidence": 35.0, "S1_rating": 13.1, "S2_group": 20.0, "S3_price": 3.0, "S4_travel": 12.0, "S5_data": 5.3, "S6_unique": 4.0, "total_score": 57.3, "google_maps_url": "", "wongnai_url": ""}, {"name": "Nagiya โครงการนิฮอนมาชิ", "area": "ทองหล่อ", "food_type": "Japanese", "price_per_person": 750, "price_range": "501-1000", "google_rating": 4.03, "google_reviews": 122, "group_suitable": true, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 12.7, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 5.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 56.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "Jérôme Cheesecake Market Place Thonglor", "area": "ทองหล่อ", "food_type": "Bakery/Cake", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.54, "google_reviews": 18, "group_suitable": false, "opening_hours": "nan", "risk_level": "ต่ำ", "confidence": 55.0, "S1_rating": 13.7, "S2_group": 8.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 8.3, "S6_unique": 4.0, "total_score": 55.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "คั่วกลิ้ง+ผักสด ราชครู", "area": "อารีย์", "food_type": "Thai", "price_per_person": 750, "price_range": "501-1000", "google_rating": 3.95, "google_reviews": 123, "group_suitable": true, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 35.0, "S1_rating": 12.5, "S2_group": 20.0, "S3_price": 6.0, "S4_travel": 5.0, "S5_data": 5.3, "S6_unique": 6.0, "total_score": 54.7, "google_maps_url": "", "wongnai_url": ""}, {"name": "Minami at Ari", "area": "อารีย์", "food_type": "Japanese", "price_per_person": 375, "price_range": "251-500 บาท", "google_rating": 4.96, "google_reviews": 2, "group_suitable": false, "opening_hours": "nan", "risk_level": "สูง", "confidence": 10.0, "S1_rating": 14.9, "S2_group": 8.0, "S3_price": 9.0, "S4_travel": 12.0, "S5_data": 1.5, "S6_unique": 4.0, "total_score": 49.4, "google_maps_url": "", "wongnai_url": ""}, {"name": "HITORI SHABU สยามพารากอน", "area": "สยาม", "food_type": "Shabu / Sukiyaki / Hot Pot", "price_per_person": 750, "price_range": "501 - 1,000 บาท", "google_rating": 3.91, "google_reviews": 52, "group_suitable": false, "opening_hours": "nan", "risk_level": "ปานกลาง", "confidence": 40.0, "S1_rating": 12.0, "S2_group": 8.0, "S3_price": 6.0, "S4_travel": 12.0, "S5_data": 6.0, "S6_unique": 4.0, "total_score": 48.0, "google_maps_url": "", "wongnai_url": ""}, {"name": "ร้านอาหารป่าตาริน หลัง สน.ทองหล่อ", "area": "ทองหล่อ", "food_type": "Thai", "price_per_person": 375, "price_range": "251-500", "google_rating": 0.0, "google_reviews": 1, "group_suitable": true, "opening_hours": "nan", "risk_level": "สูง", "confidence": 10.0, "S1_rating": 0.0, "S2_group": 20.0, "S3_price": 9.0, "S4_travel": 5.0, "S5_data": 1.5, "S6_unique": 4.0, "total_score": 39.5, "google_maps_url": "", "wongnai_url": ""}];
+
+let currentArea = 'all';
+let chatHistory = [];
+let dsFilters = { type: '', risk: '', group: '' };
+
+function rc(r){ return r==='ต่ำ'?'r-l':r==='สูง'?'r-h':'r-m'; }
+function ch(h){ const bad=['nan','ไม่มีข้อมูล','ไม่ระบุ','']; return (!h||bad.includes(String(h)))?'—':h; }
+function getF(){ return currentArea==='all'?DATA:DATA.filter(r=>r.area===currentArea); }
+function aLabel(){ return currentArea==='all'?'':'— '+currentArea; }
+
+function filterArea(area,btn){
+  currentArea=area;
+  document.querySelectorAll('.area-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('ask-answer').style.display='none';
+  document.getElementById('ask-input').value='';
+  document.getElementById('ask-history').innerHTML='';
+  chatHistory=[];
+  renderAll();
+}
+
+function updateLabels(){
+  const al=aLabel();
+  const d=getF();
+  document.getElementById('stat-total').textContent=d.length;
+  const pr=d.filter(r=>r.price_per_person>0);
+  document.getElementById('stat-avg').textContent=pr.length?'฿'+Math.round(pr.reduce((s,r)=>s+r.price_per_person,0)/pr.length):'—';
+  document.getElementById('stat-group').textContent=d.filter(r=>r.group_suitable).length+' ร้าน';
+  ['top10-label','top3-label','cmp-label','ds-label','rv-label','ask-area-label'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=al;
+  });
+}
+
+function renderTop10(){
+  const data=getF().slice(0,10);
+  document.getElementById('top10-body').innerHTML=data.map((r,i)=>{
+    const nc=i===0?'g':i===1?'s':i===2?'b':'';
+    const link=r.google_maps_url?`<a href="${r.google_maps_url}" target="_blank" style="font-size:12px">Maps ↗</a>`:'—';
+    return `<tr>
+      <td><div class="rnum ${nc}">${i+1}</div></td>
+      <td><div style="font-weight:700">${r.name}</div></td>
+      <td><span class="atag">${r.area}</span></td>
+      <td><span class="tscore">${r.total_score}</span></td>
+      <td>★ ${r.google_rating} <span style="color:var(--muted);font-size:11px">(${r.google_reviews.toLocaleString()})</span></td>
+      <td>${r.price_per_person>0?'฿'+r.price_per_person:'—'}</td>
+      <td>${r.S1_rating}</td><td>${r.S2_group}</td><td>${r.S3_price}</td>
+      <td>${r.S4_travel}</td><td>${(+r.S5_data).toFixed(1)}</td><td>${r.S6_unique}</td>
+      <td><span class="risk ${rc(r.risk_level)}">${r.risk_level}</span></td>
+      <td>${link}</td>
+    </tr>`;
+  }).join('');
+}
+
+let currentScenario = 'safe';
+
+const SCENARIO_CONFIG = {
+  safe: {
+    label: '🛡️ ปลอดภัยสุด',
+    desc: 'ร้านที่ข้อมูลน่าเชื่อถือ rating ดี confidence สูง risk ต่ำ — เลือกแล้วไม่ผิดหวัง',
+    sort: r => r.total_score * (r.confidence/100) * (r.risk_level==='ต่ำ'?1.2:r.risk_level==='ปานกลาง'?0.9:0.6),
+  },
+  budget: {
+    label: '💰 ประหยัด',
+    desc: 'ราคาต่อหัวน้อยที่สุด แต่ยังมีคุณภาพ rating ดี — เหมาะทีมงบจำกัด',
+    sort: r => {
+      if(r.price_per_person<=0) return 0;
+      return (r.google_rating/5*50) + Math.max(0, (500-r.price_per_person)/500*50);
+    },
+  },
+  quick: {
+    label: '⚡ รีบกิน',
+    desc: 'ร้านอาหารง่ายๆ ราคาไม่แพง ในห้างหรือ food court — กินเสร็จได้เร็ว',
+    sort: r => {
+      const ft = r.food_type.toLowerCase();
+      let bonus = 0;
+      if(ft.includes('food court')||ft.includes('ก๋วยเตี๋ยว')||ft.includes('noodle')||ft.includes('ข้าว')) bonus += 30;
+      if(r.price_per_person>0&&r.price_per_person<=200) bonus += 20;
+      if(r.opening_hours&&r.opening_hours!=='ไม่มีข้อมูล'&&r.opening_hours!=='ไม่ระบุ'&&r.opening_hours!=='nan') bonus += 10;
+      return r.google_rating*10 + bonus;
+    },
+  },
+  work: {
+    label: '💼 คุยงานได้',
+    desc: 'บรรยากาศเงียบ เหมาะนั่งคุยงาน ไม่เสียงดัง — confidence สูง เปิดเวลาทำงาน',
+    sort: r => {
+      let score = r.total_score;
+      if(r.noise_level==='เงียบ') score += 20;
+      if(r.work_friendly===true||r.work_friendly==='true') score += 15;
+      if(r.price_per_person>0&&r.price_per_person<=500) score += 5;
+      return score;
+    },
+  },
+  small: {
+    label: '👥 ทีมเล็ก (4-8 คน)',
+    desc: 'เหมาะทีม 4-8 คน ไม่จำเป็นต้องรองรับกลุ่มใหญ่ เน้น rating ดีและราคาเหมาะสม',
+    sort: r => r.google_rating*15 + r.total_score*0.5 + (r.price_per_person>0&&r.price_per_person<=400?10:0),
+  },
+  large: {
+    label: '👨‍👩‍👧‍👦 ทีมใหญ่ (8-12 คน)',
+    desc: 'รองรับกลุ่ม 8-12 คน ได้จริง มีที่นั่งเพียงพอ — group_suitable = true เท่านั้น',
+    sort: r => r.group_suitable ? r.total_score : -999,
+  },
+};
+
+function setScenario(key, btn) {
+  currentScenario = key;
+  document.querySelectorAll('.scen-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTop3();
+}
+
+function getTop3Data() {
+  const cfg = SCENARIO_CONFIG[currentScenario];
+  const d = getF().slice();
+  d.sort((a,b) => cfg.sort(b) - cfg.sort(a));
+  return d.slice(0,3);
+}
+
+function renderTop3(){
+  const data=getTop3Data();
+  const cfg=SCENARIO_CONFIG[currentScenario];
+  document.getElementById('scenario-desc').textContent=cfg.desc;
+  const rl=['#1 อันดับหนึ่ง','#2 อันดับสอง','#3 อันดับสาม'];
+  const rcl=['r1','r2','r3'];
+  document.getElementById('top3-grid').innerHTML=data.map((r,i)=>{
+    const links=[];
+    if(r.google_maps_url) links.push(`<a href="${r.google_maps_url}" target="_blank" class="t3-link">Google Maps ↗</a>`);
+    if(r.wongnai_url) links.push(`<a href="${r.wongnai_url}" target="_blank" class="t3-link">Wongnai ↗</a>`);
+    return `<div class="t3c ${rcl[i]}">
+      <div class="t3-rank ${i===0?'g':''}">${rl[i]}</div>
+      <div class="t3-name">${r.name}</div>
+      <div class="t3-area">${r.area} · ${r.food_type}</div>
+      <div class="t3-sc">${r.total_score}</div>
+      <div class="t3-scl">คะแนนรวม / 100</div>
+      <div class="t3-grid2">
+        <div class="t3-stat"><div class="t3-sv">★ ${r.google_rating}</div><div class="t3-sk">${r.google_reviews.toLocaleString()} รีวิว</div></div>
+        <div class="t3-stat"><div class="t3-sv">${r.price_per_person>0?'฿'+r.price_per_person:'—'}</div><div class="t3-sk">ราคา/คน</div></div>
+      </div>
+      <div class="score-pills">
+        <div class="spill">คุณภาพ Rating <span>${r.S1_rating}</span>/25</div>
+        <div class="spill">ความเหมาะกลุ่ม <span>${r.S2_group}</span>/20</div>
+        <div class="spill">ความคุ้มราคา <span>${r.S3_price}</span>/15</div>
+        <div class="spill">เดินทาง <span>${r.S4_travel}</span>/15</div>
+        <div class="spill">ข้อมูลครบ <span>${(+r.S5_data).toFixed(1)}</span>/15</div>
+        <div class="spill">ความพิเศษ <span>${r.S6_unique}</span>/10</div>
+      </div>
+      <div class="pros-cons">
+        <div class="pro">เหมาะกลุ่ม ${r.group_suitable?'8-12 คน ✓':'กลุ่มเล็ก'}</div>
+        <div class="pro">Rating ${r.google_rating}★ จาก ${r.google_reviews.toLocaleString()} รีวิว</div>
+        ${r.price_per_person>0&&r.price_per_person<=300?'<div class="pro">ราคาเข้าถึงได้ ฿'+r.price_per_person+'/คน</div>':''}
+        ${r.opening_hours&&!['nan','ไม่มีข้อมูล','ไม่ระบุ'].includes(r.opening_hours)?'<div class="pro">เวลาเปิด: '+r.opening_hours+'</div>':'<div class="con">ควรตรวจสอบเวลาเปิดก่อนไป</div>'}
+        ${r.confidence<70?'<div class="con">Confidence '+r.confidence+'% — ควรยืนยันข้อมูล</div>':''}
+      </div>
+      <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;">
+        <span class="risk ${rc(r.risk_level)}">${r.risk_level}</span>
+        <span style="font-size:12px;color:var(--muted)">Confidence ${r.confidence}%</span>
+      </div>
+      <div class="t3-links">${links.join('')||'<span style="font-size:12px;color:var(--muted)">ไม่มีลิงก์</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCompare(){
+  const data=getF().slice(0,3);
+  document.getElementById('compare-grid').innerHTML=data.map(r=>`
+    <div class="cmpc">
+      <div class="cmpc-n">${r.name}</div>
+      <div class="cmpc-a">${r.area}</div>
+      <div class="cmpr"><span class="cmpr-label">คะแนนรวม</span><strong style="color:var(--accent)">${r.total_score}/100</strong></div>
+      <div class="cmpr"><span class="cmpr-label">ราคา/คน</span><span>${r.price_per_person>0?'฿'+r.price_per_person:'—'}</span></div>
+      <div class="cmpr"><span class="cmpr-label">Google Rating</span><span>★ ${r.google_rating} (${r.google_reviews.toLocaleString()})</span></div>
+      <div class="cmpr"><span class="cmpr-label">เหมาะกลุ่ม 8-12</span><span>${r.group_suitable?'✅ ใช่':'❌ ไม่'}</span></div>
+      <div class="cmpr"><span class="cmpr-label">เวลาเปิด</span><span style="font-size:12px">${ch(r.opening_hours)}</span></div>
+      <div class="cmpr"><span class="cmpr-label">Confidence</span><span>${r.confidence}%</span></div>
+      <div class="cmpr"><span class="cmpr-label">Risk</span><span class="risk ${rc(r.risk_level)}">${r.risk_level}</span></div>
+      <div style="margin-top:10px">
+        ${r.price_per_person>0&&r.price_per_person<=300?'<div class="pro">ราคาเป็นมิตร</div>':'<div class="con">ราคาสูงกว่าค่าเฉลี่ย</div>'}
+        ${r.group_suitable?'<div class="pro">รองรับกลุ่มใหญ่</div>':'<div class="con">ไม่เหมาะกลุ่มใหญ่</div>'}
+        ${r.google_reviews>=1000?'<div class="pro">รีวิวมาก น่าเชื่อถือ</div>':'<div class="con">รีวิวน้อยกว่าค่าเฉลี่ย</div>'}
+      </div>
+    </div>`).join('');
+}
+
+// ===== DATASET FILTERS =====
+function setFilter(type, val, btn) {
+  dsFilters[type] = val;
+  const group = btn.dataset.group || type;
+  document.querySelectorAll(`[data-group="${group}"], #filter-type-row .pill`).forEach(b => {
+    if((b.dataset.group===group)||(type==='type'&&b.closest('#filter-type-row'))) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  renderDataset();
+}
+
+function initTypeFilters() {
+  const types = [...new Set(DATA.map(r => {
+    const ft = r.food_type;
+    if(ft.includes('ไทย')||ft.includes('Thai')) return 'ไทย';
+    if(ft.includes('ญี่ปุ่น')||ft.includes('Japanese')||ft.includes('Sushi')||ft.includes('Ramen')) return 'ญี่ปุ่น';
+    if(ft.includes('เกาหลี')||ft.includes('Korean')) return 'เกาหลี';
+    if(ft.includes('Italian')||ft.includes('Pizza')||ft.includes('อิตาเลียน')) return 'อิตาเลียน';
+    if(ft.includes('Western')||ft.includes('Steak')||ft.includes('Burger')) return 'Western';
+    if(ft.includes('ทะเล')||ft.includes('Seafood')) return 'อาหารทะเล';
+    if(ft.includes('จีน')||ft.includes('Chinese')) return 'จีน';
+    if(ft.includes('Shabu')||ft.includes('สุกี้')) return 'ชาบู/สุกี้';
+    return 'อื่นๆ';
+  }))];
+  const row = document.getElementById('filter-type-row');
+  types.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'pill'; b.dataset.group = 'type';
+    b.textContent = t;
+    b.onclick = () => setFilter('type', t, b);
+    row.appendChild(b);
+  });
+}
+
+let dsSort = { key: 'total_score', dir: -1 }; // default: score มากไปน้อย
+
+const DS_TEXT_COLS = ['name','area','food_type','opening_hours','risk_level'];
+const DS_ALL_SORT_COLS = ['name','area','price_per_person','google_rating','total_score','confidence','food_type','opening_hours','group_suitable','risk_level'];
+
+function sortDs(key) {
+  if(dsSort.key === key) {
+    dsSort.dir *= -1;
+  } else {
+    dsSort.key = key;
+    dsSort.dir = DS_TEXT_COLS.includes(key) ? 1 : -1;
+  }
+  // Update all sort icons
+  DS_ALL_SORT_COLS.forEach(k => {
+    const el = document.getElementById('sort-'+k);
+    if(!el) return;
+    if(k === dsSort.key) {
+      el.textContent = dsSort.dir === 1 ? '↑' : '↓';
+      el.style.color = 'var(--accent)';
+    } else {
+      el.textContent = DS_TEXT_COLS.includes(k) ? '' : '↕';
+      el.style.color = '';
+    }
+  });
+  renderDataset();
+}
+
+function renderDataset() {
+  let d = getF();
+  if(dsFilters.type) d = d.filter(r => {
+    const ft=r.food_type;
+    const t=dsFilters.type;
+    if(t==='ไทย') return ft.includes('ไทย')||ft.includes('Thai');
+    if(t==='ญี่ปุ่น') return ft.includes('ญี่ปุ่น')||ft.includes('Japanese')||ft.includes('Sushi')||ft.includes('Ramen');
+    if(t==='เกาหลี') return ft.includes('เกาหลี')||ft.includes('Korean');
+    if(t==='อิตาเลียน') return ft.includes('Italian')||ft.includes('Pizza')||ft.includes('อิตาเลียน');
+    if(t==='Western') return ft.includes('Western')||ft.includes('Steak')||ft.includes('Burger');
+    if(t==='อาหารทะเล') return ft.includes('ทะเล')||ft.includes('Seafood');
+    if(t==='จีน') return ft.includes('จีน')||ft.includes('Chinese');
+    if(t==='ชาบู/สุกี้') return ft.includes('Shabu')||ft.includes('สุกี้');
+    return !['ไทย','ญี่ปุ่น','เกาหลี','อิตาเลียน','Western','อาหารทะเล','จีน','ชาบู/สุกี้'].some(x=>ft.includes(x));
+  });
+  if(dsFilters.risk) d = d.filter(r => r.risk_level === dsFilters.risk);
+  if(dsFilters.group === 'yes') d = d.filter(r => r.group_suitable);
+  if(dsFilters.group === 'no') d = d.filter(r => !r.group_suitable);
+
+  // Apply sort
+  const riskOrder = {'ต่ำ':1,'ปานกลาง':2,'สูง':3};
+  d.sort((a,b) => {
+    let va = a[dsSort.key];
+    let vb = b[dsSort.key];
+    // Special: risk_level order
+    if(dsSort.key === 'risk_level') {
+      va = riskOrder[va] || 99;
+      vb = riskOrder[vb] || 99;
+      return dsSort.dir * (va - vb);
+    }
+    // Special: boolean group_suitable
+    if(dsSort.key === 'group_suitable') {
+      va = va ? 1 : 0;
+      vb = vb ? 1 : 0;
+      return dsSort.dir * (va - vb);
+    }
+    // Null/missing → end
+    if(va == null || va === '' || va === 'nan' || va === 'ไม่มีข้อมูล' || va === 'ไม่ระบุ') va = dsSort.dir === 1 ? 'zzz' : '';
+    if(vb == null || vb === '' || vb === 'nan' || vb === 'ไม่มีข้อมูล' || vb === 'ไม่ระบุ') vb = dsSort.dir === 1 ? 'zzz' : '';
+    if(typeof va === 'string') return dsSort.dir * String(va).localeCompare(String(vb), 'th');
+    return dsSort.dir * (va - vb);
+  });
+  document.getElementById('ds-count').textContent = `แสดง ${d.length} จาก ${getF().length} ร้าน`;
+  document.getElementById('ds-body').innerHTML = d.map(r => {
+    const link=(r.google_maps_url?`<a href="${r.google_maps_url}" target="_blank" style="font-size:12px">Maps ↗</a> `:'')+
+      (r.wongnai_url?`<a href="${r.wongnai_url}" target="_blank" style="font-size:12px">Wongnai ↗</a>`:'');
+    return `<tr>
+      <td><div style="font-weight:600;font-size:13px">${r.name}</div></td>
+      <td><span class="atag">${r.area}</span></td>
+      <td>${r.price_per_person>0?'฿'+r.price_per_person:'—'}</td>
+      <td>★ ${r.google_rating} <span style="color:var(--muted);font-size:11px">(${r.google_reviews.toLocaleString()})</span></td>
+      <td><strong>${r.total_score}</strong></td>
+      <td style="font-size:12px;color:var(--muted)">${r.confidence}%</td>
+      <td style="font-size:12px;color:var(--muted)">${r.food_type}</td>
+      <td style="font-size:12px">${ch(r.opening_hours)}</td>
+      <td>${r.group_suitable?'✅':'—'}</td>
+      <td><span class="risk ${rc(r.risk_level)}">${r.risk_level}</span></td>
+      <td>${link||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderReview() {
+  const d = getF();
+  const flagged = [];
+  d.forEach(r => {
+    const flags = [];
+    const isCrit = r.risk_level==='สูง' || r.confidence<60 || r.google_reviews<50;
+    if(r.risk_level==='สูง') flags.push({t:'ความเสี่ยงสูง',m:'review น้อยมากหรือข้อมูลไม่น่าเชื่อถือ',c:'r'});
+    if(r.confidence<60) flags.push({t:'AI Confidence ต่ำ',m:`เพียง ${r.confidence}% — ข้อมูลอาจไม่ครบ ควรยืนยันจาก source จริง`,c:'r'});
+    if(r.google_reviews<50) flags.push({t:'รีวิวน้อยมาก',m:`(${r.google_reviews} รีวิว) — ยังไม่เพียงพอสำหรับการตัดสินใจ`,c:'r'});
+    const oh=String(r.opening_hours||'');
+    if(['nan','ไม่มีข้อมูล','ไม่ระบุ',''].includes(oh)) flags.push({t:'เวลาเปิด-ปิดไม่ชัดเจน',m:'ควรโทรยืนยันหรือเช็ก Google Maps ก่อนไป',c:'y'});
+    if(isCrit && flags.length>0) flagged.push({r,flags});
+  });
+  document.getElementById('rv-label').textContent = `— ${flagged.length} รายการ ${aLabel()}`;
+  const list = document.getElementById('review-list');
+  if(!flagged.length){
+    list.innerHTML='<div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:16px 20px;color:var(--muted);font-size:13px;">✅ ไม่มีรายการที่ต้องตรวจสอบในย่านนี้</div>';
+    return;
+  }
+  list.innerHTML = flagged.map(({r,flags}) => {
+    const hasCrit = flags.some(f=>f.c==='r');
+    const link = r.google_maps_url?`<a href="${r.google_maps_url}" target="_blank" style="font-size:12px">Google Maps ↗</a>`:'';
+    return `<div class="rv-card ${hasCrit?'':'warn'}">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start">
+        <div>
+          <div class="rv-name">${r.name} <span class="atag" style="margin-left:6px">${r.area}</span></div>
+          <div class="rv-sub">${r.food_type} · ${r.price_per_person>0?'฿'+r.price_per_person+'/คน':'ราคาไม่ระบุ'} · ★${r.google_rating} (${r.google_reviews} รีวิว) · Score ${r.total_score}</div>
+        </div>
+        <div>${link}</div>
+      </div>
+      <div class="rv-flags">
+        ${flags.map(f=>`<div class="flag flag-${f.c}"><strong>[${f.t}]</strong> ${f.m}</div>`).join('')}
+      </div>
+      <div class="rv-note">Human Review เป็น step สุดท้ายของ pipeline — รายการนี้ถูก flag โดย AI และควรได้รับการยืนยันก่อนนำไปใช้ตัดสินใจจริง</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== AI ASK BOX =====
+const QUICK_PROMPTS = [
+  'ร้านที่ score สูงสุด 3 อันดับแรก?',
+  'ทีม 10 คน งบ 200 บาท/คน ที่ไหนดี?',
+  'ร้านญี่ปุ่นแนะนำได้ไหม?',
+  'อยากนั่งคุยงาน เสียงไม่ดัง?',
+  'ร้านที่ถูกที่สุดในย่านนี้?',
+  'rating ดีที่สุดคือร้านไหน?',
+  'อาหารเกาหลีมีไหม กลุ่ม 8 คน?',
+];
+
+function renderQuickPrompts() {
+  document.getElementById('quick-prompts').innerHTML = QUICK_PROMPTS.map(q =>
+    `<button class="ask-qbtn" onclick="setQ(this.textContent)">${q}</button>`
+  ).join('');
+  document.getElementById('ask-area-label').textContent = aLabel();
+}
+
+function setQ(q) { document.getElementById('ask-input').value=q; askAI(); }
+
+async function askAI() {
+  const q = document.getElementById('ask-input').value.trim();
+  if(!q) return;
+  const box=document.getElementById('ask-answer');
+  const ansText=document.getElementById('ans-text');
+  const ansLoading=document.getElementById('ans-loading');
+  const ansCards=document.getElementById('ans-cards');
+  const btn=document.getElementById('ask-btn');
+  const areaTag=document.getElementById('ans-area-tag');
+
+  box.style.display='block';
+  ansText.textContent='';
+  ansCards.innerHTML='';
+  ansLoading.style.display='inline';
+  btn.disabled=true;
+  btn.textContent='⏳ กำลังถาม...';
+  areaTag.textContent=currentArea==='all'?'ทุกย่าน':currentArea;
+
+  const dataset=getF().map(r=>({
+    name:r.name,area:r.area,food_type:r.food_type,
+    price_per_person:r.price_per_person,google_rating:r.google_rating,
+    google_reviews:r.google_reviews,group_suitable:r.group_suitable,
+    opening_hours:r.opening_hours,risk_level:r.risk_level,
+    total_score:r.total_score,confidence:r.confidence
+  }));
+
+  const sys=`คุณคือ AI ผู้ช่วยเลือกร้านอาหารสำหรับทีม 8-12 คนในกรุงเทพฯ
+ตอบจาก DATASET ที่ให้มาเท่านั้น ห้ามอ้างอิงความรู้ทั่วไปนอก dataset
+กฎ: ตอบภาษาไทย กระชับ ระบุชื่อร้าน+ราคา+rating+score เสมอ
+ท้ายคำตอบใส่ {"recommended":["ชื่อร้าน1","ชื่อร้าน2"]}
+DATASET (${dataset.length} ร้าน): ${JSON.stringify(dataset)}`;
+
+  const messages=[...chatHistory,{role:'user',content:q}];
+  try {
+    const res=await fetch('/.netlify/functions/ask',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,system:sys,messages})
+    });
+    const data=await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const fullText=data.content?.[0]?.text||'ไม่สามารถตอบได้';
+    let mainText=fullText, recommended=[];
+    const jMatch=fullText.match(/\{"recommended"\s*:\s*\[[^\]]*\]\s*\}/);
+    if(jMatch){ try{ recommended=JSON.parse(jMatch[0]).recommended||[]; mainText=fullText.replace(jMatch[0],'').trim(); }catch(e){} }
+    ansText.textContent=mainText;
+    chatHistory.push({role:'user',content:q});
+    chatHistory.push({role:'assistant',content:fullText});
+    if(chatHistory.length>10) chatHistory=chatHistory.slice(-10);
+    if(recommended.length>0){
+      const matched=DATA.filter(r=>recommended.some(n=>r.name.includes(n)||n.includes(r.name.split(' ')[0])));
+      if(matched.length>0){
+        ansCards.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:8px">📍 ร้านที่แนะนำ:</div>'+
+          matched.map(r=>`<div class="ask-card">
+            <div>
+              <div style="font-weight:700;font-size:14px">${r.name} <span class="atag">${r.area}</span></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px">${r.food_type} · ★${r.google_rating} (${r.google_reviews.toLocaleString()}) · ${r.price_per_person>0?'฿'+r.price_per_person+'/คน':'ราคาไม่ระบุ'} · Score ${r.total_score}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="risk ${rc(r.risk_level)}">${r.risk_level}</span>
+              ${r.google_maps_url?`<a href="${r.google_maps_url}" target="_blank" style="font-size:12px">Maps ↗</a>`:''}
+            </div>
+          </div>`).join('');
+      }
+    }
+    const hist=document.getElementById('ask-history');
+    const item=document.createElement('div');
+    item.className='ask-hist-item';
+    item.innerHTML=`<div class="ask-hist-q">Q: ${q}</div><div class="ask-hist-a">${mainText.slice(0,200)}${mainText.length>200?'...':''}</div>`;
+    hist.insertBefore(item,hist.firstChild);
+    document.getElementById('ask-input').value='';
+  } catch(err){
+    ansText.innerHTML=`<span style="color:var(--red)">❌ Error: ${err.message}</span>`;
+  }
+  ansLoading.style.display='none';
+  btn.disabled=false;
+  btn.textContent='ถาม AI';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderAll(){
+  updateLabels();
+  renderTop10();
+  renderTop3();
+  renderCompare();
+  renderDataset();
+  renderReview();
+  renderQuickPrompts();
+}
+
+initTypeFilters();
+renderAll();
+</script>
+</body>
+</html>
